@@ -28,7 +28,6 @@
 #include <xds.h>
 #include <caption.h>
 #include <xds_data.h>
-#include <stdio.h>
 
 int is_valid_type(uint8_t class_code, uint8_t type) {
     if (type == 0) {
