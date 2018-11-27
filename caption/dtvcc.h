@@ -9,7 +9,7 @@ extern "C" {
 typedef struct {
     unsigned int sequence_number : 2;
     int sequence_count;
-    int seen_sequences : 4;
+    unsigned int seen_sequences : 4;
     unsigned int packet_size : 6;
     unsigned int service_number : 6;
     unsigned int block_size : 5;

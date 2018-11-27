@@ -441,7 +441,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
     if (cc_type_dtvcc_packet_header == type) {
         int current_sequence_number = cc_data >> 14;
         if (current_sequence_number != (packet->sequence_number + 1) % 4){
-            status_detail_set (&frame->detail, LIBCAPTION_DETAIL_SEQUENCE_CONTINUITY);
+            status_detail_set(&frame->detail, LIBCAPTION_DETAIL_SEQUENCE_CONTINUITY);
         }
 
         packet->seen_sequences |= 1 << current_sequence_number;
@@ -462,11 +462,11 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
         }
         frame->detail.num_services_708 = (frame->detail.num_services_708 > packet->service_number) ?
                                           frame->detail.num_services_708 : packet->service_number;
-        // fprintf(stderr, "Sequence Number = 0x%02X, %d\n", packet->sequence_number, packet->sequence_number);
-        // fprintf(stderr, "Packet Size Code= 0x%02X, %d\n", packet->packet_size, packet->packet_size);
-        // fprintf(stderr, "Packet Size     = %zu\n", dtvcc_packet_size_bytes(packet));
-        // fprintf(stderr, "Service Number  = 0x%02X, %d\n", packet->service_number, packet->service_number);
-        // fprintf(stderr, "Block Size      = 0x%02X, %d\n", packet->block_size, packet->block_size);
+        // fprintf(stderr, "Sequence Number    = 0x%02X, %d\n", packet->sequence_number, packet->sequence_number);
+        // fprintf(stderr, "Packet Size Code   = 0x%02X, %d\n", packet->packet_size, packet->packet_size);
+        // fprintf(stderr, "Packet Size        = %zu\n", dtvcc_packet_size_bytes(packet));
+        // fprintf(stderr, "Service Number     = 0x%02X, %d\n", packet->service_number, packet->service_number);
+        // fprintf(stderr, "Block Size         = 0x%02X, %d\n", packet->block_size, packet->block_size);
         // fprintf(stderr, "Is Extended Header = %d\n", packet->is_extended_header);
 
         packet->is_extended_header = 0;
@@ -516,7 +516,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                     }
                     else {
                         if (byte <= 0xf){
-                            switch (byte ){
+                            switch (byte){
                                 case 0x0: // NUL
                                 case 0x3: // ETX
                                 case 0x8: // BS
