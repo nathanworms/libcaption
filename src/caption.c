@@ -460,12 +460,14 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
         if (!(packet->block_size <= 31)){
             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_SERVICE_BLOCK);
         }
+        frame->detail.num_services_708 = (frame->detail.num_services_708 > packet->service_number) ?
+                                          frame->detail.num_services_708 : packet->service_number;
         // fprintf(stderr, "Sequence Number = 0x%02X, %d\n", packet->sequence_number, packet->sequence_number);
         // fprintf(stderr, "Packet Size Code= 0x%02X, %d\n", packet->packet_size, packet->packet_size);
         // fprintf(stderr, "Packet Size     = %zu\n", dtvcc_packet_size_bytes(packet));
         // fprintf(stderr, "Service Number  = 0x%02X, %d\n", packet->service_number, packet->service_number);
         // fprintf(stderr, "Block Size      = 0x%02X, %d\n", packet->block_size, packet->block_size);
-        // fprintf(stderr, "Extended Header = %d\n", packet->is_extended_header);
+        // fprintf(stderr, "Is Extended Header = %d\n", packet->is_extended_header);
 
         packet->is_extended_header = 0;
         // extended header
@@ -473,11 +475,14 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
             packet->is_extended_header = 1;
         }
     }
-    // otherwise it is a data packet
+    // parsing dtvcc data packet
     else if (packet->is_extended_header){
+        // fprintf(stderr, "Extended Header: 0x%04x\n", cc_data);
         packet->service_number = cc_data & 0x3F;
         packet->is_extended_header = 0;
-        // fprintf(stderr, "Extended Header: 0x%04x\n", cc_data);
+
+        frame->detail.num_services_708 = (frame->detail.num_services_708 > packet->service_number) ?
+                                          frame->detail.num_services_708 : packet->service_number;
     }
     else {
         // null header or past service block bound

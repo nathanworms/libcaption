@@ -116,6 +116,7 @@ typedef enum {
 
 typedef struct {
   int types;
+  int num_services_708;
   int packetErrors;
   int packetLoss;
 } caption_frame_status_detail_t;
