@@ -377,7 +377,8 @@ libcaption_status_t sei_parse(sei_t* sei, const uint8_t* data, size_t size, doub
 ////////////////////////////////////////////////////////////////////////////////
 libcaption_status_t sei_to_caption_frame(sei_t* sei, caption_frame_t* frame,
                                          rollup_state_machine* rsm,
-                                         popon_state_machine* psm)
+                                         popon_state_machine* psm,
+                                         mpeg_bitstream_t* packet)
 {
     cea708_t cea708;
     sei_message_t* msg;

@@ -96,7 +96,7 @@ libcaption_status_t cea708_parse_h264(const uint8_t* data, size_t size, cea708_t
     }
 
     // where country and provider are zero
-    // Im not sure what this extra byte is. It sonly seesm to come up in onCaptionInfo
+    // Im not sure what this extra byte is. It only seems to come up in onCaptionInfo
     // h264 spec seems to describe this
     if (0 == cea708->provider && 0 == cea708->country) {
         if (1 > size) {
@@ -273,8 +273,15 @@ libcaption_status_t cea708_to_caption_frame(caption_frame_t* frame, cea708_t* ce
             cea708_cc_type_t type;
             uint16_t cc_data = cea708_cc_data(&cea708->user_data, i, &valid, &type);
 
-            if (valid && (cc_type_ntsc_cc_field_1 == type || cc_type_ntsc_cc_field_2 == type)) {
+            if (valid && ( cc_type_ntsc_cc_field_1 == type || cc_type_ntsc_cc_field_2 == type))
+            {
+                // fprintf(stderr, "%s\n", cc_type_ntsc_cc_field_1 == type ? "field1" : "field2");
                 status = libcaption_status_update(status, caption_frame_decode(frame, cc_data, cea708->timestamp, rsm, psm, type));
+            }
+            else if (valid && (cc_type_dtvcc_packet_data == type || cc_type_dtvcc_packet_header == type))
+            {
+                // fprintf(stderr, "dtvcc %s\n", cc_type_dtvcc_packet_header == type ? "header" : "data");
+                status = libcaption_status_update(status, caption_frame_decode_dtvcc(frame, cc_data, cea708->timestamp, type));
             }
         }
     }
