@@ -349,14 +349,12 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
                                          popon_state_machine* psm, cea708_cc_type_t type)
 {
     if (!eia608_parity_verify(cc_data)) {
-        // fprintf(stderr, "%s\n", "Parity wrong");
         frame->status = LIBCAPTION_ERROR;
         status_detail_set(&frame->detail, LIBCAPTION_DETAIL_PARITY_ERROR);
         return frame->status;
     }
 
     if (eia608_is_padding(cc_data)) {
-        // fprintf(stderr, "%s\n", "Padding");
         frame->status = LIBCAPTION_OK;
         return frame->status;
     }
@@ -380,7 +378,6 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
     } else if (cc_type_ntsc_cc_field_2 == type && eia608_is_xds(cc_data)) {
         frame->status = xds_decode(frame, cc_data);
     } else if (eia608_is_control(cc_data)) {
-        // fprintf(stderr, "%s\n", "Control");
         frame->status = caption_frame_decode_control(frame, cc_data);
         int channel;
         if (frame->state.rup) {
@@ -392,7 +389,6 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
                        eia608_is_preamble(cc_data), psm);
         }
     } else if (eia608_is_basicna(cc_data) || eia608_is_specialna(cc_data) || eia608_is_westeu(cc_data)) {
-        // fprintf(stderr, "%s\n", "Character");
 
         // Don't decode text if we dont know what mode we are in.
         if (!frame->write) {
@@ -407,7 +403,6 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
             frame->status = LIBCAPTION_READY;
         }
     } else if (eia608_is_preamble(cc_data)) {
-        // fprintf(stderr, "%s\n", "Preamble");
         frame->status = caption_frame_decode_preamble(frame, cc_data);
 
         // using eia608_tab_offset_0 as a random control code
@@ -422,7 +417,6 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
                        eia608_is_preamble(cc_data), psm);
         }
     } else if (eia608_is_midrowchange(cc_data)) {
-        // fprintf(stderr, "%s\n", "Midrowchange");
         frame->status = caption_frame_decode_midrowchange(frame, cc_data);
     }
 
@@ -462,12 +456,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
         }
         frame->detail.num_services_708 = (frame->detail.num_services_708 > packet->service_number) ?
                                           frame->detail.num_services_708 : packet->service_number;
-        // fprintf(stderr, "Sequence Number    = 0x%02X, %d\n", packet->sequence_number, packet->sequence_number);
-        // fprintf(stderr, "Packet Size Code   = 0x%02X, %d\n", packet->packet_size, packet->packet_size);
-        // fprintf(stderr, "Packet Size        = %zu\n", dtvcc_packet_size_bytes(packet));
-        // fprintf(stderr, "Service Number     = 0x%02X, %d\n", packet->service_number, packet->service_number);
-        // fprintf(stderr, "Block Size         = 0x%02X, %d\n", packet->block_size, packet->block_size);
-        // fprintf(stderr, "Is Extended Header = %d\n", packet->is_extended_header);
 
         packet->is_extended_header = 0;
         // extended header
@@ -477,7 +465,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
     }
     // parsing dtvcc data packet
     else if (packet->is_extended_header){
-        // fprintf(stderr, "Extended Header: 0x%04x\n", cc_data);
         packet->service_number = cc_data & 0x3F;
         packet->is_extended_header = 0;
 
@@ -494,19 +481,15 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
         // reading cc_data in byte increments (left to right)
         int i;
         for (i = 0; i < 2; ++i){
-            // fprintf(stderr, "Command bytes left: %d\n", packet->bytes_left);
-            // fprintf(stderr, "Data Packet: 0x%04x\n", cc_data);
             uint8_t byte = bytes[i];
             --(packet->block_size);
 
             if (0 == packet->bytes_left){
                 packet->code = byte;
                 packet->is_ext_code = 0;
-                // fprintf(stderr, "Command detected: 0x%02x\n", packet->code);
 
                 // C0_EXT1
                 if (byte == 0x10){
-                    // fprintf(stderr, "Extended Command!");
                     packet->is_ext_code = 1;
                 }
                 // C0 or C2 codes
@@ -528,7 +511,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                                 case 0xE: // HCR
                                     break;
                                 default:
-                                    // fprintf(stderr, "Abnormal Command 0x%04X! Line: %d\n",byte,  __LINE__);
                                     status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
                             }
                             packet->bytes_left = 0;
@@ -585,7 +567,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                     if (packet->is_ext_code){
                         if (byte <= 0x80){
                             // this should never happen
-                            // fprintf(stderr, "Abnormal Command! Line: %d\n", __LINE__);
                             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
                         }
                         else if (byte <= 0x87){
@@ -618,7 +599,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                 }
             } // if (0 == packet->bytes_left)
             else {
-                // fprintf(stderr, "Code parameters: 0x%02x\n", byte);
 
                 // validate define window commands
                 if (packet->code >= 0x98 && packet->code <= 0x9F && !packet->is_ext_code){
@@ -649,18 +629,15 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                 // Handling Variable Length Command Codes
                 else if (packet->code >= 0x90 && packet->code <= 0x9F && packet->is_ext_code){
                     if (packet->handle_variable_length_cmd_header){
-                        // fprintf(stderr, "Variable Length Command! Checking Header\n");
                         packet->bytes_left = byte & 0x1f;
                         packet->handle_variable_length_cmd_header = 0;
                     }
-                    // fprintf(stderr, "Variable Length Command! Ignoring value\n");
                 }
                 --(packet->bytes_left);
             } // else
         }
         if (packet->bytes_left > packet->block_size){
             // longer command than remaining service block length
-            // fprintf(stderr, "Abnormal Command! Line: %d\n", __LINE__);
             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
         }
     }
