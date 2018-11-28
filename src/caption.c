@@ -433,7 +433,7 @@ libcaption_status_t caption_frame_decode(caption_frame_t* frame, uint16_t cc_dat
 int c1_code_length[32] = { 1, 1, 1, 1, 1, 1, 1, 1,
                            2, 2, 2, 2, 2, 2, 1, 1,
                            3, 4, 3, 1, 1, 1, 1, 5,
-                           7, 7, 7, 7, 7, 7, 7, 7 };
+                           7, 7, 7, 7, 7, 7, 7, 7};
 
 libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t cc_data, 
                                                double timestamp, cea708_cc_type_t type){
@@ -490,20 +490,23 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
             return LIBCAPTION_OK;
         }
 
+        uint8_t bytes[2] = {(cc_data & 0xff00) >> 8, cc_data & 0xff};
         // reading cc_data in byte increments (left to right)
-        while (cc_data != 0){
+        int i;
+        for (i = 0; i < 2; ++i){
+            // fprintf(stderr, "Command bytes left: %d\n", packet->bytes_left);
             // fprintf(stderr, "Data Packet: 0x%04x\n", cc_data);
-            uint8_t byte = (cc_data & 0xff00) >> 8;
-            cc_data <<= 8;
+            uint8_t byte = bytes[i];
             --(packet->block_size);
 
             if (0 == packet->bytes_left){
                 packet->code = byte;
                 packet->is_ext_code = 0;
-                // fprintf(stderr, "Code detected: 0x%02x\n", packet->code);
+                // fprintf(stderr, "Command detected: 0x%02x\n", packet->code);
 
                 // C0_EXT1
                 if (byte == 0x10){
+                    // fprintf(stderr, "Extended Command!");
                     packet->is_ext_code = 1;
                 }
                 // C0 or C2 codes
@@ -525,6 +528,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                                 case 0xE: // HCR
                                     break;
                                 default:
+                                    // fprintf(stderr, "Abnormal Command 0x%04X! Line: %d\n",byte,  __LINE__);
                                     status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
                             }
                             packet->bytes_left = 0;
@@ -540,41 +544,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                 }
                 // G0 or G2 codes
                 else if (byte <= 0x7f){
-                    if (packet->is_ext_code && byte != 0xA0){
-                        // only the CC symbol takes a spot, all other spots are unused
-                        status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CHARACTER);
-                    }
-                    packet->bytes_left = 0;
-                }
-                // C1 or C3 codes
-                else if (byte <= 0x9f){
-                    if (packet->is_ext_code){
-                        if (byte <= 0x7f){
-                            // this should never happen
-                            status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
-                        }
-                        else if (byte <= 0x87){
-                            packet->bytes_left = 4;
-                        }
-                        else if (byte <= 0x8f){
-                            packet->bytes_left = 5;
-                        }
-                        else {
-                            // variable length, multi segment commands...
-                            // not implemented currently so we skip over
-                            // these bytes as per specs
-
-                            // handling the header later
-                            packet->bytes_left = 1;
-                            packet->handle_variable_length_cmd_header = 1;
-                        }
-                    }
-                    else {
-                        packet->bytes_left = c1_code_length[byte - 0x80] - 1;
-                    }
-                }
-                // G1 or G3 codes
-                else {
                     if (packet->is_ext_code){
                         switch (byte){
                             // All used characters in G2
@@ -611,6 +580,42 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                     }
                     packet->bytes_left = 0;
                 }
+                // C1 or C3 codes
+                else if (byte <= 0x9f){
+                    if (packet->is_ext_code){
+                        if (byte <= 0x80){
+                            // this should never happen
+                            // fprintf(stderr, "Abnormal Command! Line: %d\n", __LINE__);
+                            status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
+                        }
+                        else if (byte <= 0x87){
+                            packet->bytes_left = 4;
+                        }
+                        else if (byte <= 0x8f){
+                            packet->bytes_left = 5;
+                        }
+                        else {
+                            // variable length, multi segment commands...
+                            // not implemented currently so we skip over
+                            // these bytes as per specs
+
+                            // handling the header later
+                            packet->bytes_left = 1;
+                            packet->handle_variable_length_cmd_header = 1;
+                        }
+                    }
+                    else {
+                        packet->bytes_left = c1_code_length[byte - 0x80] - 1;
+                    }
+                }
+                // G1 or G3 codes
+                else {
+                    if (packet->is_ext_code && byte != 0xA0){
+                        // only the CC symbol takes a spot, all other spots are unused
+                        status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CHARACTER);
+                    }
+                    packet->bytes_left = 0;
+                }
             } // if (0 == packet->bytes_left)
             else {
                 // fprintf(stderr, "Code parameters: 0x%02x\n", byte);
@@ -644,15 +649,18 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                 // Handling Variable Length Command Codes
                 else if (packet->code >= 0x90 && packet->code <= 0x9F && packet->is_ext_code){
                     if (packet->handle_variable_length_cmd_header){
+                        // fprintf(stderr, "Variable Length Command! Checking Header\n");
                         packet->bytes_left = byte & 0x1f;
                         packet->handle_variable_length_cmd_header = 0;
                     }
+                    // fprintf(stderr, "Variable Length Command! Ignoring value\n");
                 }
                 --(packet->bytes_left);
             } // else
         }
         if (packet->bytes_left > packet->block_size){
             // longer command than remaining service block length
+            // fprintf(stderr, "Abnormal Command! Line: %d\n", __LINE__);
             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CONTROL_CODE);
         }
     }
