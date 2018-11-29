@@ -209,8 +209,7 @@ libcaption_status_t sei_from_caption_clear(sei_t* sei);
 */
 libcaption_status_t sei_to_caption_frame(sei_t* sei, caption_frame_t* frame,
                                          rollup_state_machine* rsm,
-                                         popon_state_machine* psm,
-                                         mpeg_bitstream_t* packet);
+                                         popon_state_machine* psm);
 ////////////////////////////////////////////////////////////////////////////////
 #ifdef __cplusplus
 }

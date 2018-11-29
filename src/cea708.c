@@ -54,7 +54,9 @@ int cea708_init(cea708_t* cea708, double timestamp)
     return 1;
 }
 
-void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size, user_data_t* user_data, caption_frame_status_detail_t* detail)
+void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size,
+                                           user_data_t* user_data,
+                                           caption_frame_status_detail_t* detail)
 {
     memset(user_data, 0, sizeof(user_data_t));
     user_data->process_em_data_flag = !!(data[0] & 0x80);
@@ -279,7 +281,7 @@ libcaption_status_t cea708_to_caption_frame(caption_frame_t* frame, cea708_t* ce
             cea708_cc_type_t type;
             uint16_t cc_data = cea708_cc_data(&cea708->user_data, i, &valid, &type);
 
-            if (valid && ( cc_type_ntsc_cc_field_1 == type || cc_type_ntsc_cc_field_2 == type))
+            if (valid && (cc_type_ntsc_cc_field_1 == type || cc_type_ntsc_cc_field_2 == type))
             {
                 // fprintf(stderr, "%s\n", cc_type_ntsc_cc_field_1 == type ? "field1" : "field2");
                 status = libcaption_status_update(status, caption_frame_decode(frame, cc_data, cea708->timestamp, rsm, psm, type));
