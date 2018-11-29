@@ -54,7 +54,7 @@ int cea708_init(cea708_t* cea708, double timestamp)
     return 1;
 }
 
-void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size, user_data_t* user_data)
+void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size, user_data_t* user_data, caption_frame_status_detail_t* detail)
 {
     memset(user_data, 0, sizeof(user_data_t));
     user_data->process_em_data_flag = !!(data[0] & 0x80);
@@ -63,6 +63,10 @@ void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size, use
     user_data->cc_count = (data[0] & 0x1F);
     user_data->em_data = data[1];
     data += 2, size -= 2;
+
+    if (detail && size != user_data->cc_count * 3 + 1){
+        status_detail_set(detail, LIBCAPTION_DETAIL_DTVCC_PACKING_MISMATCH);
+    }
 
     for (int i = 0; 3 < size && i < (int)user_data->cc_count; ++i, data += 3, size -= 3) {
         user_data->cc_data[i].marker_bits = data[0] >> 3;
@@ -73,7 +77,8 @@ void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size, use
 }
 
 // 00 00 00  06 C1  FF FC 34 B9 FF : onCaptionInfo.
-libcaption_status_t cea708_parse_h264(const uint8_t* data, size_t size, cea708_t* cea708)
+libcaption_status_t cea708_parse_h264(const uint8_t* data, size_t size, cea708_t* cea708,
+                                      caption_frame_status_detail_t* detail)
 {
     if (3 > size) {
         goto error;
@@ -123,7 +128,7 @@ libcaption_status_t cea708_parse_h264(const uint8_t* data, size_t size, cea708_t
     }
 
     if (3 == cea708->user_data_type_code && 2 <= size) {
-        cea708_parse_user_data_type_structure(data, size, &cea708->user_data);
+        cea708_parse_user_data_type_structure(data, size, &cea708->user_data, detail);
     } else if (4 == cea708->user_data_type_code) {
         // additional_CEA_608_data
     } else if (5 == cea708->user_data_type_code) {
@@ -137,7 +142,8 @@ error:
     return LIBCAPTION_ERROR;
 }
 
-libcaption_status_t cea708_parse_h262(const uint8_t* data, size_t size, cea708_t* cea708)
+libcaption_status_t cea708_parse_h262(const uint8_t* data, size_t size, cea708_t* cea708,
+                                      caption_frame_status_detail_t* detail)
 {
     if (!data || 7 > size) {
         return LIBCAPTION_ERROR;
@@ -146,7 +152,7 @@ libcaption_status_t cea708_parse_h262(const uint8_t* data, size_t size, cea708_t
     cea708->user_identifier = ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]);
     cea708->user_data_type_code = data[4];
     if (3 == cea708->user_data_type_code) {
-        cea708_parse_user_data_type_structure(data + 5, size - 5, &cea708->user_data);
+        cea708_parse_user_data_type_structure(data + 5, size - 5, &cea708->user_data, detail);
     }
 
     return LIBCAPTION_OK;

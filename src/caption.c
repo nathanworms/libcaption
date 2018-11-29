@@ -46,7 +46,9 @@ void caption_frame_state_clear(caption_frame_t* frame)
 void status_detail_init(caption_frame_status_detail_t* d)
 {
     d->types = 0;
+    d->num_services_708 = 0;
     d->packetErrors = 0;
+    d->packetLoss = 0;
 }
 
 void caption_frame_init(caption_frame_t* frame)
@@ -435,7 +437,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
     if (cc_type_dtvcc_packet_header == type) {
         int current_sequence_number = cc_data >> 14;
         if (current_sequence_number != (packet->sequence_number + 1) % 4){
-            status_detail_set(&frame->detail, LIBCAPTION_DETAIL_SEQUENCE_CONTINUITY);
+            status_detail_set(&frame->detail, LIBCAPTION_DETAIL_SEQUENCE_DISCONTINUITY);
         }
 
         packet->seen_sequences |= 1 << current_sequence_number;
@@ -479,8 +481,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
 
         uint8_t bytes[2] = {(cc_data & 0xff00) >> 8, cc_data & 0xff};
         // reading cc_data in byte increments (left to right)
-        int i;
-        for (i = 0; i < 2; ++i){
+        for (int i = 0; i < 2; ++i){
             uint8_t byte = bytes[i];
             --(packet->block_size);
 
