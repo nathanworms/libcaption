@@ -66,7 +66,7 @@ void cea708_parse_user_data_type_structure(const uint8_t* data, size_t size,
     user_data->em_data = data[1];
     data += 2, size -= 2;
 
-    if (detail && size != user_data->cc_count * 3 + 1){
+    if (detail && size/3 != user_data->cc_count){
         status_detail_set(detail, LIBCAPTION_DETAIL_DTVCC_PACKING_MISMATCH);
     }
 
