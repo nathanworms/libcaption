@@ -431,11 +431,11 @@ int c1_code_length[32] = { 1, 1, 1, 1, 1, 1, 1, 1,
                            3, 4, 3, 1, 1, 1, 1, 5,
                            7, 7, 7, 7, 7, 7, 7, 7};
 
-libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t cc_data, 
+libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t cc_data,
                                                double timestamp, cea708_cc_type_t type){
     dtvcc_packet_t *packet = &frame->state.dtvcc_packet;
     if (cc_type_dtvcc_packet_header == type) {
-        int current_sequence_number = cc_data >> 14;
+        uint8_t current_sequence_number = (cc_data >> 14) & 0x3;    // most sig 2 bits
         if (current_sequence_number != (packet->sequence_number + 1) % 4){
             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_SEQUENCE_DISCONTINUITY);
         }
@@ -450,9 +450,9 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
         }
 
         packet->sequence_number = current_sequence_number;
-        packet->packet_size = (cc_data >> 8) & 0x2f;
-        packet->service_number = (cc_data & 0xe0) >> 5;
-        packet->block_size =  cc_data & 0x1f;
+        packet->packet_size = (cc_data >> 8) & 0x2f;                // 6 bits
+        packet->service_number = (cc_data >> 5) & 0x7;              // 3 bits
+        packet->block_size =  cc_data & 0x1f;                       // 5 bits
         if (!(packet->block_size <= 31)){
             status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_SERVICE_BLOCK);
         }
