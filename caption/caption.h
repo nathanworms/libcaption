@@ -119,6 +119,8 @@ typedef struct {
   int num_services_708;
   int packetErrors;
   int packetLoss;
+  unsigned int hasCEA608 : 1;
+  unsigned int hasCEA708 : 1;
 } caption_frame_status_detail_t;
 
 static inline int status_detail_is_set(const caption_frame_status_detail_t* d, const caption_frame_status_detail_type t) {

@@ -49,6 +49,8 @@ void status_detail_init(caption_frame_status_detail_t* d)
     d->num_services_708 = 0;
     d->packetErrors = 0;
     d->packetLoss = 0;
+    d->hasCEA608 = 0;
+    d->hasCEA708 = 0;
 }
 
 void caption_frame_init(caption_frame_t* frame)

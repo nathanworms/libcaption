@@ -284,11 +284,13 @@ libcaption_status_t cea708_to_caption_frame(caption_frame_t* frame, cea708_t* ce
             if (valid && (cc_type_ntsc_cc_field_1 == type || cc_type_ntsc_cc_field_2 == type))
             {
                 // fprintf(stderr, "%s\n", cc_type_ntsc_cc_field_1 == type ? "field1" : "field2");
+                frame->detail.hasCEA608 = 1;
                 status = libcaption_status_update(status, caption_frame_decode(frame, cc_data, cea708->timestamp, rsm, psm, type));
             }
             else if (valid && (cc_type_dtvcc_packet_data == type || cc_type_dtvcc_packet_header == type))
             {
                 // fprintf(stderr, "dtvcc %s\n", cc_type_dtvcc_packet_header == type ? "header" : "data");
+                frame->detail.hasCEA708 = 1;
                 status = libcaption_status_update(status, caption_frame_decode_dtvcc(frame, cc_data, cea708->timestamp, type));
             }
         }
