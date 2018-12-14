@@ -489,7 +489,6 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
 
             if (0 == packet->bytes_left){
                 packet->code = byte;
-                packet->is_ext_code = 0;
 
                 // C0_EXT1
                 if (byte == 0x10){
@@ -526,6 +525,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                             packet->bytes_left = 2;
                         }
                     }
+                    packet->is_ext_code = 0;
                 }
                 // G0 or G2 codes
                 else if (byte <= 0x7f){
@@ -591,6 +591,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                     else {
                         packet->bytes_left = c1_code_length[byte - 0x80] - 1;
                     }
+                    packet->is_ext_code = 0;
                 }
                 // G1 or G3 codes
                 else {
@@ -599,6 +600,7 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                         status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_CHARACTER);
                     }
                     packet->bytes_left = 0;
+                    packet->is_ext_code = 0;
                 }
             } // if (0 == packet->bytes_left)
             else {
@@ -618,15 +620,17 @@ libcaption_status_t caption_frame_decode_dtvcc(caption_frame_t* frame, uint16_t 
                                 status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_WINDOW_SIZE);
                             }
                         }
+                        break;
                         case 4: // column_count
                         {
-                            int column_count = byte & 0x3f + 1;
+                            int column_count = (byte & 0x3f) + 1;
                             // maybe also have additional check to see if it is 4x3 or 16x9
                             // since this changes the upper bound of column_count
                             if (column_count > 42){ // as per specs
                                 status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_WINDOW_SIZE);
                             }
                         }
+                        break;
                     }
                 }
                 // Handling Variable Length Command Codes
