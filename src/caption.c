@@ -312,8 +312,8 @@ libcaption_status_t caption_frame_decode_text(caption_frame_t* frame, uint16_t c
     char char1[5], char2[5];
     size_t chars = eia608_to_utf8(cc_data, &chan, &char1[0], &char2[0]);
 
-    // if chars is 0, it is an invalid character
-    if (chars == 0) {
+    // if chars is less 1, there's an invalid character
+    if (chars <= 1) {
         // if normal character
         if (eia608_is_basicna(cc_data)){
             uint8_t c1 = cc_data & 0x7f;
