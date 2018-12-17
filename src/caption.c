@@ -172,9 +172,7 @@ libcaption_status_t caption_frame_decode_preamble(caption_frame_t* frame, uint16
     int row, col, chn, uln;
 
     uint8_t preamble_data = cc_data & 0x7f;
-    // if the data is not within the valid preamble range according to spec,
-    // should there be extra validation in place to check the higher bytes too?
-    if (!((preamble_data >= 0x40 && preamble_data <= 0x5f) || (preamble_data >= 0x60 && preamble_data <= 0x7f))){
+    if (!((preamble_data >= 0x40 && preamble_data <= 0x7f))){
         status_detail_set(&frame->detail, LIBCAPTION_DETAIL_ABNORMAL_PACKET);
     }
 
@@ -801,8 +799,9 @@ void update_rsm(caption_frame_status_detail_t* details, eia608_control_t cmd, in
             rsm->next_state = (1 << RU123);	;
             ++rsm->pac;
 
-            if (!rsm->cr)
+            if (!rsm->cr){
                 rsm->missing_error = 1;
+            }
 
             if (rsm->oos_error) { status_detail_set(details, LIBCAPTION_DETAIL_ROLLUP_OOS_ERROR); }
             if (rsm->missing_error) { status_detail_set(details, LIBCAPTION_DETAIL_ROLLUP_MISSING_ERROR); }
@@ -868,49 +867,49 @@ void update_psm(caption_frame_status_detail_t* details, eia608_control_t cmd, in
                 psm->oos_error = 1;
 
             psm->cur_state  = 1 << PAC;
-            psm->next_state = (1 << PAC | 1 << TOFF | 1 << EDM);	;
+            psm->next_state = (1 << PAC | 1 << TOFF | 1 << EDM);
             ++psm->pac;
             return;
         }
 
         switch (cmd) {
             case eia608_control_erase_non_displayed_memory:
-            psm->cur_state = 1 << ENM;
-            psm->next_state = 1 << PAC;	
-            break;
+                psm->cur_state = 1 << ENM;
+                psm->next_state = 1 << PAC;	
+                break;
 
             case eia608_tab_offset_1:
             case eia608_tab_offset_2:
             case eia608_tab_offset_3:
-            psm->cur_state  = 1 << TOFF;
-            psm->next_state = (1 << PAC | 1 << EDM);	
-            break;
-						
-            case eia608_control_erase_display_memory:
-            if (!(psm->next_state & (1 << EDM)))
-                psm->oos_error = 1;
+                psm->cur_state  = 1 << TOFF;
+                psm->next_state = (1 << PAC | 1 << EDM);	
+                break;
 
-            psm->cur_state  = 1 << EDM;
-            psm->next_state = (1 << EOC);	
-            ++psm->edm;
-            break;
+            case eia608_control_erase_display_memory:
+                if (!(psm->next_state & (1 << EDM)))
+                    psm->oos_error = 1;
+
+                psm->cur_state  = 1 << EDM;
+                psm->next_state = (1 << EOC);	
+                ++psm->edm;
+                break;
 
             case eia608_control_end_of_caption:
-            if (!(psm->next_state & (1 << EOC)))
-                psm->oos_error = 1;
+                if (!(psm->next_state & (1 << EOC)))
+                    psm->oos_error = 1;
 
-            psm->cur_state  = 1 << EOC;
-            psm->next_state = (1 << RCL);	
-            ++psm->eoc;
-            if (!psm->pac || !psm->edm)
-                psm->missing_error = 1;
+                psm->cur_state  = 1 << EOC;
+                psm->next_state = (1 << RCL);	
+                ++psm->eoc;
+                if (!psm->pac || !psm->edm)
+                    psm->missing_error = 1;
 
-            if (psm->oos_error) { status_detail_set(details, LIBCAPTION_DETAIL_POPON_OOS_ERROR); }
-            if (psm->missing_error) { status_detail_set(details, LIBCAPTION_DETAIL_POPON_MISSING_ERROR); }
-            if (psm->oos_error || psm->missing_error)
-                status_detail_set(details, LIBCAPTION_DETAIL_POPON_ERROR);
-            init_psm(psm);
-            break;
+                if (psm->oos_error) { status_detail_set(details, LIBCAPTION_DETAIL_POPON_OOS_ERROR); }
+                if (psm->missing_error) { status_detail_set(details, LIBCAPTION_DETAIL_POPON_MISSING_ERROR); }
+                if (psm->oos_error || psm->missing_error)
+                    status_detail_set(details, LIBCAPTION_DETAIL_POPON_ERROR);
+                init_psm(psm);
+                break;
         }
     }
 }
